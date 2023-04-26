@@ -1,26 +1,33 @@
 #!/usr/bin/node
-// script that computes the number of tasks completed by user id.
+/* computes the number of tasks completed by user id. */
+const request = require('request');
 
-const args = process.argv;
-let reqURL = args[2];
-let request = require('request');
-request(reqURL, function (error, response, body) {
-  if (error) {
-    console.log('error:', error);
-  } else {
-    let todos = JSON.parse(body);
-    let dash = {};
-    for (let i = 0; i < todos.length; i++) {
-      let status = (todos[i]['completed']);
-      let key = todos[i]['userId'].toString();
-      if (status) {
-        if (dash[key]) {
-          dash[key]++;
-        } else {
-          dash[key] = 1;
-        }
+if (process.argv.length >= 3) {
+  const url = process.argv[2];
+  const newObj = {};
+  request(url, (err, response, body) => {
+    body = JSON.parse(body);
+
+    const userIds = new Set();
+    if (err == null) {
+      for (const x in body) {
+        userIds.add(body[x].userId);
       }
+      userIds.forEach(val => {
+        let completed = 0;
+        for (const x in body) {
+          if (body[x].userId === val && body[x].completed === true) {
+            completed++;
+          }
+        }
+        newObj[val] = completed;
+      });
+
+      let jsonString = JSON.stringify(newObj, null, 2);
+      jsonString = jsonString.slice(3, -2);
+      jsonString = '{' + jsonString + ' }';
+      jsonString = jsonString.replace(/"/g, "'");
+      console.log(jsonString);
     }
-    console.log(dash);
-  }
-});
+  });
+}
